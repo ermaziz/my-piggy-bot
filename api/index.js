@@ -1,8 +1,8 @@
 import { Telegraf } from 'telegraf';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const bot = new Telegraf(process.env.TGBOT_TOKEN);
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 bot.start((ctx) => ctx.reply('你好！我是你的智能小帮手，有什么我可以帮你的吗？'));
 
@@ -10,13 +10,11 @@ bot.on('text', async (ctx) => {
   try {
     const userMessage = ctx.message.text;
     
-    // 调用最新的 Google Gen AI SDK 标准模型
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: userMessage,
-    });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(userMessage);
+    const response = await result.response;
+    const replyText = response.text() || '没听清，能再说一遍吗？';
 
-    const replyText = response.text || '没听清，能再说一遍吗？';
     await ctx.reply(replyText);
   } catch (error) {
     console.error('Gemini Error:', error);
@@ -24,7 +22,6 @@ bot.on('text', async (ctx) => {
   }
 });
 
-// Vercel Serverless 适配
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     await bot.handleUpdate(req.body);
