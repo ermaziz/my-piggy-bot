@@ -7,7 +7,7 @@
     "start": "node api/index.js"
   },
   "dependencies": {
-    "@google/genai": "latest",
+    "@google/genai": "^0.1.1",
     "telegraf": "^4.16.3"
   }
 }
