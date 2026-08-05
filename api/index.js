@@ -1,39 +1,35 @@
-const { Telegraf } = require('telegraf');
-const { GoogleGenAI } = require('@google/genai');
+import { Telegraf } from 'telegraf';
+import { GoogleGenAI } from '@google/genai';
 
 const bot = new Telegraf(process.env.TGBOT_TOKEN);
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-bot.start((ctx) => ctx.reply('你好！我是你的小猪机器人，有什么我可以帮你的吗？'));
+bot.start((ctx) => ctx.reply('你好！我是你的智能小帮手，有什么我可以帮你的吗？'));
 
 bot.on('text', async (ctx) => {
   try {
-    await ctx.sendChatAction('typing');
     const userMessage = ctx.message.text;
-
+    
+    // 调用最新的 Google Gen AI SDK 标准模型
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       contents: userMessage,
     });
 
-    await ctx.reply(response.text);
+    const replyText = response.text || '没听清，能再说一遍吗？';
+    await ctx.reply(replyText);
   } catch (error) {
     console.error('Gemini Error:', error);
     await ctx.reply('哎呀，AI 思考时走神了，请稍后再试一次~');
   }
 });
 
-// Vercel Serverless Function 适配入口
-module.exports = async (req, res) => {
+// Vercel Serverless 适配
+export default async function handler(req, res) {
   if (req.method === 'POST') {
-    try {
-      await bot.handleUpdate(req.body);
-      res.status(200).json({ ok: true });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: e.message });
-    }
+    await bot.handleUpdate(req.body);
+    res.status(200).json({ ok: true });
   } else {
-    res.status(200).send('Piggy Bot is running smoothly!');
+    res.status(200).send('Telegram Bot is running smoothly!');
   }
-};
+}
